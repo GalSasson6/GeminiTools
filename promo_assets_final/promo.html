@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Power Tools Promo</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: rgb(10, 15, 32); /* Navy dark */
+            --card-bg: rgba(255, 255, 255, 0.03); /* Glassy */
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #a0a5b5;
+            --accent-blue: #4e73df;
+            --accent-red: #ff4757;
+            --accent-purple: #8e44ad;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1280px;
+            height: 800px;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(255, 255, 255, 0.05) 0px,
+                    rgba(255, 255, 255, 0.05) 1px,
+                    transparent 1px,
+                    transparent 30px
+                ),
+                linear-gradient(135deg, rgb(10, 15, 32) 0%, rgb(27, 36, 79) 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .layout {
+            width: 1160px;
+            height: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding-bottom: 8px;
+        }
+
+        .logo-img {
+            width: 72px;
+            height: 72px;
+            /* Explicitly no background so it stays transparent */
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .title {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Bento Grid */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 24px;
+            flex-grow: 1;
+        }
+
+        .bento-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: border-color 0.2s ease;
+        }
+
+        .bento-card:hover {
+            border-color: #3f3f46;
+        }
+
+        .card-switch {
+            grid-column: span 2;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-switch .content-wrapper {
+            max-width: 55%;
+        }
+        
+        .shortcut-display {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            background: #000;
+            padding: 24px 32px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        .icon-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: #27272a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .icon-box svg {
+            width: 26px;
+            height: 26px;
+        }
+
+        /* Distinct Icon Colors */
+        .icon-tracking { color: var(--accent-blue); background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .icon-reply { color: var(--accent-green); background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .icon-rtl { color: var(--accent-amber); background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .icon-switch { color: var(--accent-purple); background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); }
+        .icon-latex { color: var(--accent-red); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        .key {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+
+        .key-shift {
+            background-color: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 0 #2e59d9;
+        }
+
+        .key-tab {
+            background-color: white;
+            color: #000;
+            box-shadow: 0 4px 0 #d4d4d8;
+        }
+
+        .plus {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: #52525b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout">
+        <div class="header">
+            <!-- Ensure logo background is fully transparent by removing any inline styles or classes applying background -->
+            <img src="../icons/icon128.png" alt="Logo" class="logo-img">
+            <div class="title-group">
+                <h1 class="title">Gemini Power Tools</h1>
+                <div class="subtitle">Supercharge Your Workflow</div>
+            </div>
+        </div>
+
+        <div class="bento-grid">
+            
+            <!-- Tracking -->
+            <div class="bento-card">
+                <div class="icon-box icon-tracking">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+                </div>
+                <h3>Usage Tracking</h3>
+                <p>Monitor interactions and track your Gemini model usage with real-time statistics.</p>
+            </div>
+
+            <!-- Reply -->
+            <div class="bento-card">
+                <div class="icon-box icon-reply">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+                </div>
+                <h3>Reply & Quote</h3>
+                <p>Seamlessly quote specific messages from Gemini to maintain clear conversational context.</p>
+            </div>
+
+            <!-- RTL -->
+            <div class="bento-card">
+                <div class="icon-box icon-rtl">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802" /></svg>
+                </div>
+                <h3>RTL Support</h3>
+                <p>Enjoy a flawless interface that natively respects Right-to-Left language structures.</p>
+            </div>
+
+            <!-- Switch -->
+            <div class="bento-card card-switch">
+                <div class="content-wrapper">
+                    <div class="icon-box icon-switch">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>
+                    </div>
+                    <h3>Fast Model Switch</h3>
+                    <p>Instantly jump between different Gemini models without losing focus or relying on the mouse.</p>
+                </div>
+                <div class="shortcut-display">
+                    <span class="key key-shift">Shift</span>
+                    <span class="plus">+</span>
+                    <span class="key key-tab">Tab</span>
+                </div>
+            </div>
+
+            <!-- LaTeX -->
+            <div class="bento-card">
+                <div class="icon-box icon-latex">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.813-6.841m-11.996 0L14 4l-3.22 3.22a15.996 15.996 0 0 0-4.648 4.764M14 4lM14 4l-2.25 2.25M14 4l2.25 2.25m-2.25-2.25 2.25-2.25" /></svg>
+                </div>
+                <h3>Enhanced LaTeX</h3>
+                <p>Read formulas easily with improved colors and contrast for inline and block LaTeX.</p>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

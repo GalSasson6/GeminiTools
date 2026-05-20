@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Gemini Usage Statistics</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 760px;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa;
+      color: #202124;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 1px 2px rgba(66, 133, 244, 0.25));
+    }
+
+    h1 {
+      margin: 0;
+      color: #1a73e8;
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    main {
+      padding: 22px 24px 28px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-card,
+    .chart-panel,
+    .totals-panel {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.12);
+    }
+
+    .summary-card {
+      padding: 14px 16px;
+    }
+
+    .summary-label {
+      color: #5f6368;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      color: #202124;
+      font-size: 26px;
+      line-height: 1.1;
+      font-weight: 700;
+    }
+
+    .summary-subtext {
+      color: #5f6368;
+      font-size: 12px;
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 650;
+      margin: 0;
+    }
+
+    .section-subtitle {
+      color: #5f6368;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .chart-panel {
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .chart-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .range-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 3px;
+      background: #eef2f7;
+      border: 1px solid #dce3ec;
+      border-radius: 8px;
+      flex: 0 0 auto;
+    }
+
+    .range-btn {
+      min-width: 42px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #5f6368;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 9px;
+      transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .range-btn:hover {
+      color: #1a73e8;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .range-btn.active {
+      background: #fff;
+      color: #1a73e8;
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.14);
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex: 0 0 auto;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px 12px;
+      max-width: 470px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #3c4043;
+      font-size: 12px;
+    }
+
+    .chart-wrap {
+      height: 340px;
+      min-height: 340px;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .totals-panel {
+      overflow: hidden;
+    }
+
+    .totals-header {
+      padding: 16px;
+      border-bottom: 1px solid #e8eaed;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 11px 16px;
+      text-align: left;
+      border-bottom: 1px solid #f1f3f4;
+      font-size: 13px;
+    }
+
+    th {
+      color: #5f6368;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-weight: 700;
+      background: #fbfcfd;
+    }
+
+    td.numeric,
+    th.numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .model-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      font-weight: 600;
+    }
+
+    .empty-state {
+      padding: 40px 24px;
+      color: #5f6368;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    @media (max-width: 780px) {
+      body {
+        min-width: 0;
+      }
+
+      header,
+      main {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-header {
+        display: block;
+      }
+
+      .chart-title-row {
+        display: block;
+      }
+
+      .range-control {
+        margin-top: 12px;
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .range-btn {
+        flex: 1;
+      }
+
+      .legend {
+        justify-content: flex-start;
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <svg class="brand-logo" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="gemini-logo-gradient" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#34a853" />
+            <stop offset="0.38" stop-color="#4285f4" />
+            <stop offset="0.72" stop-color="#a142f4" />
+            <stop offset="1" stop-color="#fbbc04" />
+          </linearGradient>
+        </defs>
+        <path fill="url(#gemini-logo-gradient)" d="M16 2.5c1.35 7.2 5.3 11.15 13.5 13.5-8.2 2.35-12.15 6.3-13.5 13.5C14.65 22.3 10.7 18.35 2.5 16 10.7 13.65 14.65 9.7 16 2.5Z" />
+      </svg>
+      <h1>Usage Statistics</h1>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary-grid" aria-label="Usage summary">
+      <div class="summary-card">
+        <div class="summary-label" id="summary-range-label">Last 7 days</div>
+        <div class="summary-value" id="summary-range-total">0</div>
+        <div class="summary-subtext">tracked sends</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">All time</div>
+        <div class="summary-value" id="summary-all-time">0</div>
+        <div class="summary-subtext">tracked sends</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Top model</div>
+        <div class="summary-value" id="summary-top-model">-</div>
+        <div class="summary-subtext" id="summary-top-model-count"></div>
+      </div>
+    </section>
+
+    <section class="chart-panel" aria-labelledby="chart-title">
+      <div class="chart-title-row">
+        <div>
+          <h2 class="section-title" id="chart-title">7-Day Usage by Model</h2>
+          <div class="section-subtitle" id="chart-subtitle">One line per model across the last 7 days.</div>
+        </div>
+        <div class="range-control" role="group" aria-label="Graph range">
+          <button class="range-btn" type="button" data-range="1d">1D</button>
+          <button class="range-btn active" type="button" data-range="7d">7D</button>
+          <button class="range-btn" type="button" data-range="1m">1M</button>
+          <button class="range-btn" type="button" data-range="all">All</button>
+        </div>
+      </div>
+      <div class="chart-header">
+        <div class="legend" id="chart-legend"></div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="usage-chart" aria-label="7 day model usage line graph"></canvas>
+      </div>
+    </section>
+
+    <section class="totals-panel" aria-labelledby="totals-title">
+      <div class="totals-header">
+        <div>
+          <h2 class="section-title" id="totals-title">Model Totals</h2>
+          <div class="section-subtitle">All-time totals plus recent 7-day activity.</div>
+        </div>
+      </div>
+      <div id="totals-table-wrap"></div>
+    </section>
+  </main>
+
+  <script src="stats.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Usage Tracking & Shortcut</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: rgb(10, 15, 32);
+            --text-main: #ffffff;
+            --text-muted: #a0a5b5;
+            --accent-blue: #4e73df;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1280px;
+            height: 800px;
+            background:
+                repeating-linear-gradient(45deg,
+                    rgba(255, 255, 255, 0.05) 0px,
+                    rgba(255, 255, 255, 0.05) 1px,
+                    transparent 1px,
+                    transparent 30px),
+                linear-gradient(135deg, rgb(10, 15, 32) 0%, rgb(27, 36, 79) 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            padding: 40px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .logo-img {
+            width: 60px;
+            height: 60px;
+        }
+
+        .title-top {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            flex-grow: 1;
+        }
+
+        .image-wrapper {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 40px;
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .usage-img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .content {
+            text-align: center;
+            max-width: 850px;
+        }
+
+        h1 {
+            font-size: 44px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            font-size: 22px;
+            line-height: 1.6;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .shortcut-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .shortcut-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .key {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+
+        .key-shift {
+            background-color: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 0 #2e59d9;
+        }
+
+        .key-tab {
+            background-color: white;
+            color: #000;
+            box-shadow: 0 4px 0 #d4d4d8;
+        }
+
+        .plus {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: #52525b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <img src="../icons/icon128.png" alt="Logo" class="logo-img">
+        <h1 class="title-top">Gemini Power Tools</h1>
+    </div>
+
+    <div class="container">
+        <div class="image-wrapper">
+            <img src="usage_badge_cropped.png" alt="Usage Badge" class="usage-img">
+        </div>
+
+        <div class="content">
+            <h1>Stay Within Your Limits</h1>
+            <p>
+                Get real-time feedback on your model usage directly in the chat bar.
+                Keep track of exactly how many messages you have left before hitting the limit.
+            </p>
+
+            <div class="shortcut-area">
+                <span class="shortcut-text">Quick Switch Models:</span>
+                <span class="key key-shift">Shift</span>
+                <span class="plus">+</span>
+                <span class="key key-tab">Tab</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

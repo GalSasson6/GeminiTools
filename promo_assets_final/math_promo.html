@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Math & Quick Reply</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: rgb(10, 15, 32);
+            --text-main: #ffffff;
+            --text-muted: #a0a5b5;
+            --accent-blue: #4e73df;
+            --accent-green: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1280px;
+            height: 800px;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(255, 255, 255, 0.05) 0px,
+                    rgba(255, 255, 255, 0.05) 1px,
+                    transparent 1px,
+                    transparent 30px
+                ),
+                linear-gradient(135deg, rgb(10, 15, 32) 0%, rgb(27, 36, 79) 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            padding: 40px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .logo-img {
+            width: 60px;
+            height: 60px;
+        }
+
+        .title-top {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .container {
+            display: flex;
+            flex-grow: 1;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .screenshot-area {
+            flex: 1.2;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 16px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+        }
+
+        .screenshot-img {
+            max-width: 100%;
+            max-height: 580px;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        .info-area {
+            flex: 0.8;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 24px;
+            border-radius: 20px;
+            border-left: 4px solid var(--accent-blue);
+            backdrop-filter: blur(5px);
+        }
+
+        .feature-card.white {
+            border-left-color: #ffffff;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        .highlight {
+            color: #fff;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img src="../icons/icon128.png" alt="Logo" class="logo-img">
+        <h1 class="title-top">Gemini Power Tools</h1>
+    </div>
+
+    <div class="container">
+        <div class="screenshot-area">
+            <img src="screenshot_neon_math_cropped.png" alt="Neon Math Screenshot" class="screenshot-img">
+        </div>
+
+        <div class="info-area">
+            <div class="feature-card">
+                <h2>Vibrant Neon Math</h2>
+                <p>
+                    Experience math formulas like never before. <span class="highlight">High-contrast neon styling</span> makes LaTeX expressions pop and easier to read on dark backgrounds.
+                </p>
+            </div>
+
+            <div class="feature-card white">
+                <h2>Quick Reply & Quote</h2>
+                <p>
+                    Keep the conversation focused. Seamlessly <span class="highlight">quote and reply</span> to specific messages in your chat history for perfect context.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
