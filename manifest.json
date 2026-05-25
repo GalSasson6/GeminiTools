@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
-    "name": "Gemini Power Tools",
-    "version": "1.7",
+    "name": "Gemini Tools",
+    "version": "1.7.4",
     "description": "Tracks Gemini model usage and adds optional quality-of-life controls for Gemini and AI Studio.",
     "permissions": [
         "storage"

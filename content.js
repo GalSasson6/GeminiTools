@@ -33,7 +33,7 @@ const ASK_CONTEXT_BAR_ID = 'gemini-counter-ask-context';
 const ASK_CONTEXT_STYLE_ID = 'gemini-counter-ask-context-styles';
 const ASK_CONTEXT_HIGHLIGHT_NAME = 'gemini-counter-ask-context-highlight';
 const ASK_CONTEXT_MAX_CHARS = 4000;
-const AUTO_DIR_TARGET_SELECTOR = '.markdown > *, .query-text > *, .ql-editor > *';
+const AUTO_DIR_TARGET_SELECTOR = '.markdown > *, .query-text > *, .ql-editor, .ql-editor > *';
 const DEFAULT_AUTO_DIR_ENABLED = false;
 const NEON_MATH_STYLE_ATTR = 'data-gemini-counter-neon-math-style';
 const LIGHT_MATH_CLEANUP_STYLE_ATTR = 'data-gemini-counter-light-math-cleanup-style';
@@ -701,6 +701,8 @@ function normalizeAutoDirEnabled(value) {
 function applyAutoDirToTargets() {
   document.querySelectorAll(AUTO_DIR_TARGET_SELECTOR).forEach((x) => {
     if (x.dir !== 'auto') x.dir = 'auto';
+    if (x.style?.direction) x.style.direction = '';
+    if (x.style?.unicodeBidi !== 'plaintext') x.style.unicodeBidi = 'plaintext';
   });
 }
 
@@ -731,7 +733,13 @@ function syncAutoDirFeature() {
   autoDirObserver = new MutationObserver(() => {
     applyAutoDirToTargets();
   });
-  autoDirObserver.observe(document.body, { childList: true, subtree: true });
+  autoDirObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ['style', 'dir'],
+    childList: true,
+    characterData: true,
+    subtree: true,
+  });
 }
 
 function setAutoDirFeatureEnabled(enabled) {
@@ -762,7 +770,7 @@ const NEON_MATH_CSS = `
   .model-response-text strong, .model-response-text b,
   .model-response-text h1, .model-response-text h2, .model-response-text h3 {
     color: #ffffff !important;
-    text-shadow: 0 0 6px rgba(255, 255, 255, 0.7) !important;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.0.11) !important;
     font-weight: bold !important;
   }
 
@@ -770,7 +778,7 @@ const NEON_MATH_CSS = `
   .katex *[style*="color: black"], .katex *[style*="color: #000"],
   .katex *[style*="color: #202124"], .katex *[style*="color:rgb(0, 0, 0)"] {
     color: #ffffff !important;
-    text-shadow: 0 0 6px rgba(255, 255, 255, 0.7) !important;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.45) !important;
     stroke: #ffffff !important;
     fill: #ffffff !important;
     border-color: #ffffff !important;
@@ -1560,7 +1568,8 @@ function scheduleComposerFocusRestore(focusState) {
 }
 
 function getVisibleModelOptions(dropdown) {
-  return getModelOptionsFromContainer(dropdown);
+  const modelRows = getModelOptionsFromContainer(dropdown, { modelRowsOnly: true });
+  return modelRows.length > 0 ? modelRows : getModelOptionsFromContainer(dropdown);
 }
 
 function hasSelectedState(element) {
@@ -1741,7 +1750,13 @@ function cycleThinkingLevel(focusState) {
   setTimeout(tryCycleThinkingLevel, 75);
 }
 
+const DOUBLE_CONTROL_MAX_GAP_MS = 350;
+const CONTROL_TAP_MAX_HOLD_MS = 120;
+const CONTROL_CHORD_GRACE_MS = 120;
 let lastControlKeyTapAt = 0;
+let controlKeyDownAt = 0;
+let isStandaloneControlTap = false;
+let pendingControlTapTimer = null;
 
 function isPlainControlKey(event) {
   return event.key === 'Control'
@@ -1749,6 +1764,28 @@ function isPlainControlKey(event) {
     && !event.shiftKey
     && !event.altKey
     && !event.metaKey;
+}
+
+function resetControlTapState() {
+  clearTimeout(pendingControlTapTimer);
+  pendingControlTapTimer = null;
+  lastControlKeyTapAt = 0;
+  controlKeyDownAt = 0;
+  isStandaloneControlTap = false;
+}
+
+function cancelPendingControlTap() {
+  clearTimeout(pendingControlTapTimer);
+  pendingControlTapTimer = null;
+}
+
+function scheduleDoubleControlAction(focusState) {
+  cancelPendingControlTap();
+  pendingControlTapTimer = setTimeout(() => {
+    pendingControlTapTimer = null;
+    resetControlTapState();
+    cycleThinkingLevel(focusState);
+  }, CONTROL_CHORD_GRACE_MS);
 }
 
 document.addEventListener('click', (event) => {
@@ -1764,18 +1801,14 @@ document.addEventListener('click', (event) => {
 
 document.addEventListener('keydown', (event) => {
   if (isPlainControlKey(event)) {
-    const now = Date.now();
-    if (now - lastControlKeyTapAt <= 350) {
-      const focusState = getComposerFocusState();
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      lastControlKeyTapAt = 0;
-      cycleThinkingLevel(focusState);
-      return;
-    }
+    cancelPendingControlTap();
+    controlKeyDownAt = Date.now();
+    isStandaloneControlTap = true;
+    return;
+  }
 
-    lastControlKeyTapAt = now;
+  if (event.ctrlKey || lastControlKeyTapAt || isStandaloneControlTap || pendingControlTapTimer) {
+    resetControlTapState();
   }
 
   if (event.key === 'Tab' && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
@@ -1811,10 +1844,39 @@ function scheduleAskSelectionUpdate() {
 document.addEventListener('selectionchange', scheduleAskSelectionUpdate);
 document.addEventListener('mouseup', scheduleAskSelectionUpdate, true);
 document.addEventListener('keyup', (event) => {
+  if (event.key === 'Control') {
+    const now = Date.now();
+    const controlHoldMs = controlKeyDownAt ? now - controlKeyDownAt : Infinity;
+    const isCleanTap = isStandaloneControlTap
+      && controlHoldMs <= CONTROL_TAP_MAX_HOLD_MS
+      && !event.shiftKey
+      && !event.altKey
+      && !event.metaKey;
+
+    if (!isCleanTap) {
+      resetControlTapState();
+    } else if (now - lastControlKeyTapAt <= DOUBLE_CONTROL_MAX_GAP_MS) {
+      const focusState = getComposerFocusState();
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      scheduleDoubleControlAction(focusState);
+      return;
+    } else {
+      lastControlKeyTapAt = now;
+      controlKeyDownAt = 0;
+      isStandaloneControlTap = false;
+    }
+
+  } else if (lastControlKeyTapAt || isStandaloneControlTap || pendingControlTapTimer) {
+    resetControlTapState();
+  }
+
   if (event.key.startsWith('Arrow') || event.key === 'Shift' || event.key === 'Control' || event.key === 'Meta') {
     scheduleAskSelectionUpdate();
   }
 }, true);
+window.addEventListener('blur', resetControlTapState);
 
 window.addEventListener('scroll', hideAskSelectionButton, true);
 

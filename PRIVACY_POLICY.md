@@ -1,8 +1,8 @@
-# Privacy Policy for Gemini Power Tools
+# Privacy Policy for Gemini Tools
 
 **Last Updated: May 2, 2026**
 
-Gemini Power Tools ("the Extension") is committed to protecting your privacy. This Privacy Policy explains how we handle your data.
+Gemini Tools ("the Extension") is committed to protecting your privacy. This Privacy Policy explains how we handle your data.
 
 ## 1. Data Collection
 The Extension **does not collect, store, or transmit** any personal information, browsing history, or your Gemini/AI Studio conversations to external servers.
