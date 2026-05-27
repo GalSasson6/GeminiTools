@@ -38,6 +38,18 @@ const DEFAULT_AUTO_DIR_ENABLED = false;
 const NEON_MATH_STYLE_ATTR = 'data-gemini-counter-neon-math-style';
 const LIGHT_MATH_CLEANUP_STYLE_ATTR = 'data-gemini-counter-light-math-cleanup-style';
 const DEFAULT_NEON_MATH_ENABLED = false;
+const RESPONSE_FOLD_STYLE_ID = 'gemini-counter-response-fold-styles';
+const RESPONSE_FOLD_CONTROL_CLASS = 'gemini-counter-response-fold-control';
+const RESPONSE_FOLD_TARGET_SELECTOR = [
+  '.model-response-text',
+  'message-content .markdown',
+  '.response-container .markdown',
+  '.bard-text-block .markdown',
+].join(', ');
+const RESPONSE_FOLD_HOST_CLASS = 'gemini-counter-response-fold-host';
+const RESPONSE_FOLD_MIN_CHARS = 120;
+const RESPONSE_FOLD_MIN_HEIGHT = 80;
+const RESPONSE_FOLD_COLLAPSED_HEIGHT = 28;
 
 // ─── Default Settings ───────────────────────────────────────────────────────
 const DEFAULT_LIMIT = 100;
@@ -99,8 +111,45 @@ function getModelLabelAliasKey(label) {
   return String(label || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
 }
 
+function withExtensionContext(action) {
+  try {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.id) return false;
+    action();
+    return true;
+  } catch (error) {
+    if (!/Extension context invalidated/i.test(String(error?.message || error))) {
+      throw error;
+    }
+    return false;
+  }
+}
+
+function storageGet(keys, callback) {
+  return withExtensionContext(() => {
+    chrome.storage.sync.get(keys, (result) => {
+      if (chrome.runtime.lastError) return;
+      callback(result || {});
+    });
+  });
+}
+
+function storageSet(data, callback) {
+  return withExtensionContext(() => {
+    chrome.storage.sync.set(data, () => {
+      if (chrome.runtime.lastError) return;
+      callback?.();
+    });
+  });
+}
+
+function addStorageChangeListener(listener) {
+  return withExtensionContext(() => {
+    chrome.storage.onChanged.addListener(listener);
+  });
+}
+
 function loadModelLabelAliases(callback) {
-  chrome.storage.sync.get([MODEL_LABEL_ALIASES_STORAGE_KEY], (result) => {
+  storageGet([MODEL_LABEL_ALIASES_STORAGE_KEY], (result) => {
     learnedModelLabelAliases = result[MODEL_LABEL_ALIASES_STORAGE_KEY] || {};
     callback?.();
   });
@@ -115,7 +164,7 @@ function rememberModelLabelAlias(label, model) {
       ...learnedModelLabelAliases,
       [key]: model,
     };
-    chrome.storage.sync.set({ [MODEL_LABEL_ALIASES_STORAGE_KEY]: learnedModelLabelAliases });
+    storageSet({ [MODEL_LABEL_ALIASES_STORAGE_KEY]: learnedModelLabelAliases });
   }
 
   migrateStoredModelKey(label, model);
@@ -355,7 +404,11 @@ function collectText(node, parts = []) {
   }
 
   const element = node;
-  if (element.id === BADGE_ID || element.classList?.contains('gemini-counter-dropdown-badge')) {
+  if (
+    element.id === BADGE_ID
+    || element.classList?.contains('gemini-counter-dropdown-badge')
+    || element.classList?.contains(RESPONSE_FOLD_CONTROL_CLASS)
+  ) {
     return parts;
   }
 
@@ -553,7 +606,7 @@ function updateBadge() {
   const model = getModelName();
   if (model === 'Unknown Model') return;
 
-  chrome.storage.sync.get(['modelCounts', 'modelSettings'], (result) => {
+  storageGet(['modelCounts', 'modelSettings'], (result) => {
     const counts = result.modelCounts || {};
     const settings = result.modelSettings || {};
 
@@ -603,7 +656,7 @@ function checkReset(model, counts, settings, callback) {
 
   if (changed) {
     counts[model] = modelData;
-    chrome.storage.sync.set({ modelCounts: counts }, () => {
+    storageSet({ modelCounts: counts }, () => {
       callback(counts);
     });
   } else {
@@ -627,7 +680,7 @@ function incrementCount() {
   const model = getModelName();
   if (model === 'Unknown Model') return;
 
-  chrome.storage.sync.get(['modelCounts', 'modelSettings', 'modelTotals', 'modelUsageHistory', 'modelUsageHourlyHistory'], (result) => {
+  storageGet(['modelCounts', 'modelSettings', 'modelTotals', 'modelUsageHistory', 'modelUsageHourlyHistory'], (result) => {
     let counts = result.modelCounts || {};
     let settings = result.modelSettings || {};
     let totals = result.modelTotals || {};
@@ -646,7 +699,7 @@ function incrementCount() {
       currentCounts[model] = modelData;
       recordUsageStats(model, now, currentWindowCountBeforeIncrement, totals, history, hourlyHistory);
 
-      chrome.storage.sync.set({
+      storageSet({
         modelCounts: currentCounts,
         modelTotals: totals,
         modelUsageHistory: history,
@@ -658,7 +711,7 @@ function incrementCount() {
 
 // ─── Cross-tab sync via storage.onChanged ───────────────────────────────────
 
-chrome.storage.onChanged.addListener((changes, area) => {
+addStorageChangeListener((changes, area) => {
   if (area !== 'sync') return;
 
   if (changes[MODEL_LABEL_ALIASES_STORAGE_KEY]) {
@@ -687,6 +740,235 @@ function hasMessageContent() {
   if (!textarea) return false;
   const text = textarea.textContent || textarea.innerText || '';
   return text.trim().length > 0;
+}
+
+// --- Response Folding -------------------------------------------------------
+
+let responseFoldCounter = 0;
+let responseFoldTimer = null;
+
+function ensureResponseFoldStyles() {
+  if (document.getElementById(RESPONSE_FOLD_STYLE_ID)) return;
+
+  const style = document.createElement('style');
+  style.id = RESPONSE_FOLD_STYLE_ID;
+  style.textContent = `
+    .${RESPONSE_FOLD_CONTROL_CLASS} {
+      align-items: center;
+      background: color-mix(in srgb, Canvas 70%, transparent);
+      border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+      border-radius: 50%;
+      color: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      font: 500 12px/1.25 Google Sans, Roboto, Arial, sans-serif;
+      height: 26px;
+      justify-content: center;
+      left: -36px;
+      padding: 0;
+      position: absolute;
+      top: 0;
+      user-select: none;
+      width: 26px;
+      z-index: 2;
+    }
+
+    .${RESPONSE_FOLD_CONTROL_CLASS}:hover {
+      background: color-mix(in srgb, CanvasText 8%, Canvas);
+    }
+
+    .${RESPONSE_FOLD_CONTROL_CLASS}:focus-visible {
+      outline: 2px solid #8ab4f8;
+      outline-offset: 2px;
+    }
+
+    .${RESPONSE_FOLD_CONTROL_CLASS} .gemini-counter-response-fold-arrow {
+      border-bottom: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      display: inline-block;
+      height: 7px;
+      transform: rotate(45deg);
+      transition: transform 0.18s ease;
+      width: 7px;
+    }
+
+    .${RESPONSE_FOLD_CONTROL_CLASS}[aria-expanded="true"] .gemini-counter-response-fold-arrow {
+      transform: rotate(225deg);
+    }
+
+    .gemini-counter-foldable-response {
+      transition: max-height 0.33s ease, opacity 0.33s ease !important;
+      position: relative !important;
+    }
+
+    .${RESPONSE_FOLD_HOST_CLASS} {
+      position: relative !important;
+    }
+
+    .gemini-counter-response-collapsed {
+      max-height: ${RESPONSE_FOLD_COLLAPSED_HEIGHT}px;
+      overflow: hidden !important;
+    }
+
+
+  `;
+  document.head.appendChild(style);
+}
+
+function getResponseFoldText(target) {
+  return collectText(target, []).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function isResponseFoldTarget(target) {
+  if (!target || !isVisibleElement(target)) return false;
+  if (target.closest?.(`[contenteditable="true"], .query-text, #${ASK_CONTEXT_BAR_ID}, #${ASK_SELECTION_BUTTON_ID}`)) return false;
+
+  const parentFoldTarget = target.parentElement?.closest?.(RESPONSE_FOLD_TARGET_SELECTOR);
+  if (parentFoldTarget) return false;
+
+  return true;
+}
+
+function getResponseFoldControl(target) {
+  const targetId = target.dataset.geminiCounterResponseFoldId;
+  if (!targetId) return null;
+
+  const parent = target.parentElement;
+  const control = parent?.querySelector?.(
+    `.${RESPONSE_FOLD_CONTROL_CLASS}[data-response-fold-target="${CSS.escape(targetId)}"]`
+  );
+
+  return control || null;
+}
+
+function removeResponseFold(target) {
+  getResponseFoldControl(target)?.remove();
+  target.classList.remove(
+    'gemini-counter-foldable-response',
+    'gemini-counter-response-collapsed',
+    'gemini-counter-response-expanded'
+  );
+  target.parentElement?.classList.remove(RESPONSE_FOLD_HOST_CLASS);
+  delete target.dataset.geminiCounterResponseFoldState;
+}
+
+function clearResponseFoldAnimation(target) {
+  if (target.dataset.geminiCounterResponseFoldTimer) {
+    clearTimeout(Number(target.dataset.geminiCounterResponseFoldTimer));
+    delete target.dataset.geminiCounterResponseFoldTimer;
+  }
+}
+
+function finishResponseFoldAnimation(target, shouldClearMaxHeight) {
+  clearResponseFoldAnimation(target);
+
+  const timer = setTimeout(() => {
+    delete target.dataset.geminiCounterResponseFoldTimer;
+    if (shouldClearMaxHeight && target.dataset.geminiCounterResponseFoldState === 'expanded') {
+      target.style.maxHeight = '';
+    }
+  }, 360);
+
+  target.dataset.geminiCounterResponseFoldTimer = String(timer);
+}
+
+function updateResponseFoldControl(target, control, { animate = false } = {}) {
+  const isExpanded = target.dataset.geminiCounterResponseFoldState === 'expanded';
+  control.setAttribute('aria-expanded', String(isExpanded));
+  control.setAttribute('aria-label', isExpanded ? 'Minimize response' : 'Show response');
+  control.setAttribute('title', isExpanded ? 'Minimize response' : 'Show response');
+
+  clearResponseFoldAnimation(target);
+
+  if (!animate) {
+    target.style.maxHeight = isExpanded ? '' : `${RESPONSE_FOLD_COLLAPSED_HEIGHT}px`;
+    target.classList.toggle('gemini-counter-response-collapsed', !isExpanded);
+    target.classList.toggle('gemini-counter-response-expanded', isExpanded);
+    return;
+  }
+
+  if (isExpanded) {
+    const fullHeight = target.scrollHeight;
+    target.style.maxHeight = `${RESPONSE_FOLD_COLLAPSED_HEIGHT}px`;
+    target.classList.remove('gemini-counter-response-collapsed');
+    target.classList.add('gemini-counter-response-expanded');
+    target.offsetHeight;
+    requestAnimationFrame(() => {
+      target.style.maxHeight = `${fullHeight}px`;
+      finishResponseFoldAnimation(target, true);
+    });
+    return;
+  }
+
+  const fullHeight = target.scrollHeight;
+  target.style.maxHeight = `${fullHeight}px`;
+  target.classList.remove('gemini-counter-response-expanded');
+  target.classList.add('gemini-counter-response-collapsed');
+  target.offsetHeight;
+  requestAnimationFrame(() => {
+    target.style.maxHeight = `${RESPONSE_FOLD_COLLAPSED_HEIGHT}px`;
+    finishResponseFoldAnimation(target, false);
+  });
+}
+
+function createResponseFoldControl(target) {
+  if (!target.dataset.geminiCounterResponseFoldId) {
+    responseFoldCounter += 1;
+    target.dataset.geminiCounterResponseFoldId = `response-${responseFoldCounter}`;
+  }
+
+  const control = document.createElement('button');
+  control.type = 'button';
+  control.className = RESPONSE_FOLD_CONTROL_CLASS;
+  control.dataset.responseFoldTarget = target.dataset.geminiCounterResponseFoldId;
+  control.innerHTML = `
+    <span class="gemini-counter-response-fold-arrow" aria-hidden="true"></span>
+  `;
+  control.addEventListener('click', () => {
+    target.dataset.geminiCounterResponseFoldState =
+      target.dataset.geminiCounterResponseFoldState === 'expanded' ? 'collapsed' : 'expanded';
+    updateResponseFoldControl(target, control, { animate: true });
+  });
+
+  const host = target.parentElement;
+  host?.classList.add(RESPONSE_FOLD_HOST_CLASS);
+  host?.insertBefore(control, target);
+  return control;
+}
+
+function applyResponseFolding() {
+  if (!document.body) return;
+  ensureResponseFoldStyles();
+
+  document.querySelectorAll(RESPONSE_FOLD_TARGET_SELECTOR).forEach((target) => {
+    if (!isResponseFoldTarget(target)) return;
+
+    const text = getResponseFoldText(target);
+    const isLong = text.length >= RESPONSE_FOLD_MIN_CHARS || target.scrollHeight >= RESPONSE_FOLD_MIN_HEIGHT;
+
+    if (!isLong) {
+      removeResponseFold(target);
+      return;
+    }
+
+    target.classList.add('gemini-counter-foldable-response');
+    target.parentElement?.classList.add(RESPONSE_FOLD_HOST_CLASS);
+
+    if (!target.dataset.geminiCounterResponseFoldState) {
+      target.dataset.geminiCounterResponseFoldState = 'expanded';
+    }
+
+    const control = getResponseFoldControl(target) || createResponseFoldControl(target);
+    updateResponseFoldControl(target, control);
+  });
+}
+
+function scheduleResponseFolding() {
+  clearTimeout(responseFoldTimer);
+  responseFoldTimer = setTimeout(() => {
+    responseFoldTimer = null;
+    applyResponseFolding();
+  }, 120);
 }
 
 // --- Native Auto Direction --------------------------------------------------
@@ -748,7 +1030,7 @@ function setAutoDirFeatureEnabled(enabled) {
 }
 
 function loadAutoDirSetting() {
-  chrome.storage.sync.get(['autoDirEnabled'], (result) => {
+  storageGet(['autoDirEnabled'], (result) => {
     setAutoDirFeatureEnabled(
       result.autoDirEnabled === undefined
         ? DEFAULT_AUTO_DIR_ENABLED
@@ -1183,7 +1465,7 @@ function setNeonMathFeatureEnabled(enabled) {
 }
 
 function loadNeonMathSetting() {
-  chrome.storage.sync.get(['neonMathEnabled'], (result) => {
+  storageGet(['neonMathEnabled'], (result) => {
     setNeonMathFeatureEnabled(
       result.neonMathEnabled === undefined
         ? DEFAULT_NEON_MATH_ENABLED
@@ -1915,6 +2197,7 @@ function watchPillForChanges() {
 
 function startObserver() {
   startNeonMathThemeObserver();
+  scheduleResponseFolding();
 
   // Try to attach pill-specific observer
   if (watchPillForChanges()) {
@@ -1953,6 +2236,14 @@ function startObserver() {
       renderAskContextBar();
     }
 
+    if (mutations.some((mutation) => (
+      mutation.type === 'childList'
+      || mutation.type === 'characterData'
+      || [...mutation.addedNodes].some((node) => node.nodeType === Node.ELEMENT_NODE)
+    ))) {
+      scheduleResponseFolding();
+    }
+
     syncAutoDirFeature();
     if (mutations.some((mutation) => (
       mutation.type === 'attributes'
@@ -1964,6 +2255,7 @@ function startObserver() {
 
   bodyObserver.observe(document.body, {
     childList: true,
+    characterData: true,
     subtree: true,
     attributes: true,
     attributeFilter: ['class', 'style', 'data-theme', 'theme'],
@@ -2048,7 +2340,7 @@ function injectDropdownBadges() {
 
   ensureDropdownStyles();
 
-  chrome.storage.sync.get(['modelCounts', 'modelSettings'], (result) => {
+  storageGet(['modelCounts', 'modelSettings'], (result) => {
     const counts = result.modelCounts || {};
     const settings = result.modelSettings || {};
 
@@ -2121,7 +2413,7 @@ function mergeModelCountData(target, source) {
 function migrateStoredModelKey(rawKey, resolved) {
   if (!rawKey || !resolved || rawKey === resolved) return;
 
-  chrome.storage.sync.get(['modelCounts', 'modelSettings', 'modelTotals', 'modelUsageHistory', 'modelUsageHourlyHistory'], (result) => {
+  storageGet(['modelCounts', 'modelSettings', 'modelTotals', 'modelUsageHistory', 'modelUsageHourlyHistory'], (result) => {
     const counts = result.modelCounts || {};
     const settings = result.modelSettings || {};
     const totals = result.modelTotals || {};
@@ -2169,7 +2461,7 @@ function migrateStoredModelKey(rawKey, resolved) {
 
     if (!changed) return;
 
-    chrome.storage.sync.set({
+    storageSet({
       modelCounts: counts,
       modelSettings: settings,
       modelTotals: totals,
@@ -2180,7 +2472,7 @@ function migrateStoredModelKey(rawKey, resolved) {
 }
 
 // If counts were stored under raw localized names, copy them to resolved names.
-chrome.storage.sync.get(['modelCounts', 'modelSettings', 'modelTotals', 'modelUsageHistory', 'modelUsageHourlyHistory', MODEL_LABEL_ALIASES_STORAGE_KEY], (result) => {
+storageGet(['modelCounts', 'modelSettings', 'modelTotals', 'modelUsageHistory', 'modelUsageHourlyHistory', MODEL_LABEL_ALIASES_STORAGE_KEY], (result) => {
   learnedModelLabelAliases = result[MODEL_LABEL_ALIASES_STORAGE_KEY] || learnedModelLabelAliases;
   const counts = result.modelCounts || {};
   const settings = result.modelSettings || {};
@@ -2249,7 +2541,7 @@ chrome.storage.sync.get(['modelCounts', 'modelSettings', 'modelTotals', 'modelUs
   }
 
   if (changed) {
-    chrome.storage.sync.set({
+    storageSet({
       modelCounts: counts,
       modelSettings: settings,
       modelTotals: totals,

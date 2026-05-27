@@ -117,17 +117,50 @@
         }
 
         .card-switch .content-wrapper {
-            max-width: 55%;
+            max-width: 46%;
         }
         
-        .shortcut-display {
+        .shortcut-stack {
             display: flex;
-            gap: 16px;
+            flex-direction: column;
+            gap: 14px;
+            width: 350px;
+        }
+
+        .shortcut-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 18px;
             align-items: center;
             background: #000;
-            padding: 24px 32px;
+            padding: 16px 18px;
             border-radius: 20px;
             border: 1px solid var(--card-border);
+        }
+
+        .shortcut-label {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            line-height: 1.35;
+            text-transform: uppercase;
+            color: #e5e7eb;
+        }
+
+        .shortcut-label span {
+            display: block;
+            margin-top: 2px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: none;
+            color: var(--text-muted);
+        }
+
+        .key-combo {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         .icon-box {
@@ -169,9 +202,9 @@
 
         .key {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 700;
-            padding: 12px 20px;
+            padding: 10px 14px;
             border-radius: 10px;
             text-transform: uppercase;
         }
@@ -188,9 +221,15 @@
             box-shadow: 0 4px 0 #d4d4d8;
         }
 
+        .key-ctrl {
+            background-color: var(--accent-green);
+            color: white;
+            box-shadow: 0 4px 0 #047857;
+        }
+
         .plus {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 700;
             color: #52525b;
         }
@@ -243,13 +282,26 @@
                     <div class="icon-box icon-switch">
                         <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>
                     </div>
-                    <h3>Fast Model Switch</h3>
-                    <p>Instantly jump between different Gemini models without losing focus or relying on the mouse.</p>
+                    <h3>Keyboard Fast Lane</h3>
+                    <p>Switch models or thinking levels in-place without breaking focus or reaching for the mouse.</p>
                 </div>
-                <div class="shortcut-display">
-                    <span class="key key-shift">Shift</span>
-                    <span class="plus">+</span>
-                    <span class="key key-tab">Tab</span>
+                <div class="shortcut-stack">
+                    <div class="shortcut-row">
+                        <div class="shortcut-label">Switch models<span>Cycle Gemini options</span></div>
+                        <div class="key-combo">
+                            <span class="key key-shift">Shift</span>
+                            <span class="plus">+</span>
+                            <span class="key key-tab">Tab</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-row">
+                        <div class="shortcut-label">Thinking level<span>Cycle depth settings</span></div>
+                        <div class="key-combo">
+                            <span class="key key-ctrl">Ctrl</span>
+                            <span class="plus">+</span>
+                            <span class="key key-ctrl">Ctrl</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

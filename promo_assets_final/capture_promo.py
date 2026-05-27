@@ -4,9 +4,10 @@ from playwright.async_api import async_playwright
 from PIL import Image
 
 async def main():
-    html_path = os.path.abspath('screenshots_ready/promo.html')
-    output_png = 'screenshots_ready/promo_1280x800.png'
-    output_jpg = 'screenshots_ready/promo_1280x800.jpg'
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    html_path = os.path.join(base_dir, 'promo.html')
+    output_png = os.path.join(base_dir, 'promo_1280x800.png')
+    output_jpg = os.path.join(base_dir, 'promo_1280x800.jpg')
     
     # 1. Capture screenshot using playwright
     async with async_playwright() as p:
